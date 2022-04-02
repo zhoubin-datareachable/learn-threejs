@@ -37,73 +37,94 @@ function init() {
   plane.position.z = 0;
   scene.add(plane);
 
-  // 设置方块大小
-  const cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
-  // 设置方块的材料
-  const cubeMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
-  // 创建方块
-  const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-  // 投射阴影
-  cube.castShadow = true;
-  // 设置方块的位置
-  cube.position.x = -4;
-  cube.position.y = 3;
-  cube.position.z = 0;
-  scene.add(cube);
-
-  // 创建球
-  const sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
-  const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x7777ff });
-  const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-  // 设置球的位置
-  sphere.position.x = 20;
-  sphere.position.y = 4;
-  sphere.position.z = 2;
-  sphere.castShadow = true;
-  scene.add(sphere);
-
   // 设置相机的角度
   camera.position.x = -30;
   camera.position.y = 40;
   camera.position.z = 30;
   camera.lookAt(scene.position);
 
-  // 创建光源
+  // 创建环境光
+  const ambientLight = new THREE.AmbientLight(0x0c0c0c);
+  scene.add(ambientLight);
+
+  // 创建点光源
   const spotLight = new THREE.SpotLight(0xffffff);
   spotLight.position.set(-40, 60, -10);
   spotLight.castShadow = true;
   scene.add(spotLight);
   let step = 0;
 
-  /**
-   * rotationSpeed 立方体初始旋转速度
-   * bouncingSpeed 球体初始弹跳速度
-   */
+  // 创建控制器
   const controls = new (function () {
+    // 设置初始化旋转速度
     this.rotationSpeed = 0.02;
-    this.bouncingSpeed = 0.2;
-  })();
+    // 对象数量
+    this.numberOfObjects = scene.children.length;
 
-  console.log(controls);
+    // 移除立方体,检验是否是Mesh对象避免移除摄像机和环境光
+    this.removeCube = function () {
+      // 所有的立方体
+      const allChildren = scene.children;
+      // 最后的立方体
+      const lastObject = allChildren[allChildren.length - 1];
+      if (lastObject instanceof THREE.Mesh) {
+        // 场景中移除该对象
+        scene.remove(lastObject);
+        this.numberOfObjects = scene.children.length;
+      }
+    };
+
+    // 添加立方体
+    this.addCube = function () {
+      // 随机生成1到3的数
+      const cubeSize = Math.ceil(Math.random() * 3);
+      // 创建长宽高为cubeSize的立方体
+      const cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+      const cubeMaterial = new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff });
+      const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+      // 设置阴影的显示
+      cube.castShadow = true;
+      // 设置名字
+      cube.name = "cube-" + scene.children.length;
+
+      // 设置立方体在场景中的随机位置
+      cube.position.x = -30 + Math.round(Math.random() * planeGeometry.parameters.width);
+      cube.position.y = Math.round(Math.random() * 5);
+      cube.position.z = -20 + Math.round(Math.random() * planeGeometry.parameters.height);
+
+      // 添加物体到场景
+      scene.add(cube);
+      this.numberOfObjects = scene.children.length;
+    };
+
+    this.outputObjects = function () {
+      console.log(scene.children);
+    };
+  })();
 
   const gui = new dat.GUI();
   // 设置旋转速度范围0~0.5
   gui.add(controls, "rotationSpeed", 0, 0.5);
-  // 设置弹跳速度范围0~0.5
-  gui.add(controls, "bouncingSpeed", 0, 0.5);
+  // 增加添加立方体控制器
+  gui.add(controls, "addCube");
+  // 增加移除立方体控制器
+  gui.add(controls, "removeCube");
+  // 增加输出objects控制器
+  gui.add(controls, "outputObjects");
+  // 增加数量的监听
+  gui.add(controls, "numberOfObjects").listen();
 
   render();
 
   function render() {
-    // 旋转立方体坐标
-    cube.rotation.x += controls.rotationSpeed;
-    cube.rotation.y += controls.rotationSpeed;
-    cube.rotation.z += controls.rotationSpeed;
-
-    // 球体弹跳速度
-    step += controls.bouncingSpeed;
-    sphere.position.x = 20 + 10 * Math.cos(step);
-    sphere.position.y = 2 + 10 * Math.abs(Math.sin(step));
+    // 操作场景中的所有对象，让物体动起来
+    scene.traverse(function (e) {
+      if (e instanceof THREE.Mesh && e != plane) {
+        e.rotation.x += controls.rotationSpeed;
+        e.rotation.y += controls.rotationSpeed;
+        e.rotation.z += controls.rotationSpeed;
+      }
+    });
 
     // 渲染帧
     requestAnimationFrame(render);
