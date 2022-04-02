@@ -6,7 +6,8 @@ function init() {
   const canvas = document.getElementById("webgl");
   // 创建一个场景,场景是一个容器，主要用于保存光源，渲染物体等
   const scene = new THREE.Scene();
-
+  // 场景雾化效果
+  scene.fog = new THREE.Fog(0xffffff, 0.015, 100);
   // 创建一个透视相机
   const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 
