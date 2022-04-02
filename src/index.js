@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import * as dat from "dat.gui";
 
 // 初始化
 function init() {
@@ -74,17 +75,39 @@ function init() {
   scene.add(spotLight);
   let step = 0;
 
-  function renderScene() {
-    cube.rotation.x += 0.02;
-    cube.rotation.y += 0.02;
-    cube.rotation.z += 0.02;
-    step += 0.04;
+  /**
+   * rotationSpeed 立方体初始旋转速度
+   * bouncingSpeed 球体初始弹跳速度
+   */
+  const controls = new (function () {
+    this.rotationSpeed = 0.02;
+    this.bouncingSpeed = 0.2;
+  })();
+
+  console.log(controls);
+
+  const gui = new dat.GUI();
+  // 设置旋转速度范围0~0.5
+  gui.add(controls, "rotationSpeed", 0, 0.5);
+  // 设置弹跳速度范围0~0.5
+  gui.add(controls, "bouncingSpeed", 0, 0.5);
+
+  render();
+
+  function render() {
+    // 旋转立方体坐标
+    cube.rotation.x += controls.rotationSpeed;
+    cube.rotation.y += controls.rotationSpeed;
+    cube.rotation.z += controls.rotationSpeed;
+
+    // 球体弹跳速度
+    step += controls.bouncingSpeed;
     sphere.position.x = 20 + 10 * Math.cos(step);
     sphere.position.y = 2 + 10 * Math.abs(Math.sin(step));
-    requestAnimationFrame(renderScene);
-    // 渲染
+
+    // 渲染帧
+    requestAnimationFrame(render);
     renderer.render(scene, camera);
   }
-  renderScene();
 }
 window.onload = init;
